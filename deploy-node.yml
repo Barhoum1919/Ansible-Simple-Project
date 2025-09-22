@@ -1,0 +1,59 @@
+- name: Deploy Node.js App on Azure VM
+  hosts: node-servers
+  become: yes
+  vars:
+    app_repo: "https://github.com/Barhoum1919/node-js-app.git"
+    app_dir: "/home/azureuser/node-app"
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install required packages
+      apt:
+        name:
+          - git
+          - curl
+        state: present
+
+    - name: Install Node.js LTS
+      shell: |
+        curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
+        apt-get install -y nodejs
+      args:
+        executable: /bin/bash
+
+    - name: Check node and npm version
+      shell: |
+        node -v
+        npm -v
+      register: node_version
+    - debug:
+        var: node_version.stdout_lines
+
+    - name: Clone Node.js app repo
+      git:
+        repo: "{{ app_repo }}"
+        dest: "{{ app_dir }}"
+        version: main
+        force: yes
+
+    - name: Install Node.js app dependencies
+      npm:
+        path: "{{ app_dir }}"
+        state: present
+
+    - name: Install PM2 globally
+      npm:
+        name: pm2
+        global: yes
+
+    - name: Start app with PM2
+      shell: |
+        pm2 start {{ app_dir }}/app.js --name node-app
+        pm2 save
+        pm2 startup systemd
+      args:
+        executable: /bin/bash
