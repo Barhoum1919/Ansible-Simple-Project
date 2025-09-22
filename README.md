@@ -66,6 +66,3 @@ Notes:
 - Open the appropriate port in Azure Networking (default 3000)
 - PM2 keeps the app running even after reboot
 
-License:
-
-MIT License
